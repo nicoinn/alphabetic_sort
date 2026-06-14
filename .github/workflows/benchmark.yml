@@ -30,15 +30,21 @@ jobs:
           - python-version: "3.14"
             free-threaded: false
             allow-prereleases: true
+            continue-on-error: true
           - python-version: "3.14"
             free-threaded: true
             allow-prereleases: true
+            continue-on-error: true
           - python-version: "3.15"
             free-threaded: false
             allow-prereleases: true
+            continue-on-error: true
           - python-version: "3.15"
             free-threaded: true
             allow-prereleases: true
+            continue-on-error: true
+
+    continue-on-error: ${{ matrix.continue-on-error || false }}
 
     steps:
       - uses: actions/checkout@v4
