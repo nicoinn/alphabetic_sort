@@ -34,7 +34,7 @@ jobs:
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Resolve tag name
         id: resolve
@@ -72,7 +72,7 @@ jobs:
     needs: [prepare, ci]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.tag }}
 
@@ -157,7 +157,7 @@ jobs:
       contents: write  # to create releases and upload assets
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.tag }}
 
