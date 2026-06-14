@@ -1,0 +1,127 @@
+[build-system]
+# Pin setuptools < 69.3 to avoid automatic License-File metadata (Metadata-Version 2.4)
+# which twine's packaging 24.0 does not yet recognize as valid.
+requires = ["setuptools>=68,<69.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# ---------------------------------------------------------------------------
+# Project metadata
+# ---------------------------------------------------------------------------
+[project]
+name = "alphabetic_sort"
+version = "0.1.0"
+description = "Sort numbers by the alphabetical order of their word representations in a given language"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "Nicolas Innocenti", email = "nicoinn@gmail.com"},
+]
+keywords = ["sort", "numbers", "alphabetical", "localization", "i18n", "num2words"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
+dependencies = [
+    "num2words>=0.5.14",
+]
+
+[project.urls]
+Homepage = "https://github.com/nicoinn/alphabetic_sort"
+Repository = "https://github.com/nicoinn/alphabetic_sort"
+"Bug Tracker" = "https://github.com/nicoinn/alphabetic_sort/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "httpx>=0.27",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "build>=1.2",
+    "twine>=5",
+]
+webui = [
+    "fastapi[standard]>=0.115",
+    "jinja2>=3",
+]
+
+# ---------------------------------------------------------------------------
+# Package discovery
+# ---------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["alphabetic_sort*"]
+
+[tool.setuptools.package-data]
+alphabetic_sort = ["py.typed"]
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# ---------------------------------------------------------------------------
+# ruff — linting + formatting
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",   # line length — handled by formatter
+    "B008",   # function calls in default args (needed for FastAPI Form())
+    "N802",   # locale codes (fr_BE, fr_CH) are legitimately uppercase in test names
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["alphabetic_sort"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ---------------------------------------------------------------------------
+# mypy — type checking
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true       # num2words has no type stubs
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+
+# ---------------------------------------------------------------------------
+# coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["alphabetic_sort"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 90

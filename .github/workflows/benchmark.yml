@@ -1,0 +1,120 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    name: Python ${{ matrix.python-version }}${{ matrix.free-threaded && ' (free-threaded)' || '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.11"
+            free-threaded: false
+          - python-version: "3.12"
+            free-threaded: false
+          - python-version: "3.13"
+            free-threaded: false
+          - python-version: "3.13"
+            free-threaded: true
+          - python-version: "3.14"
+            free-threaded: false
+            allow-prereleases: true
+          - python-version: "3.14"
+            free-threaded: true
+            allow-prereleases: true
+          - python-version: "3.15"
+            free-threaded: false
+            allow-prereleases: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}${{ matrix.free-threaded && 't' || '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.allow-prereleases || false }}
+          # free-threaded builds use the "t" suffix variant
+          python-version-file: ""
+        env:
+          # setup-python maps free-threaded via the PYTHON_GIL env var
+          PYTHON_GIL: ${{ matrix.free-threaded && '0' || '1' }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install num2words
+
+      - name: Install library
+        run: pip install -e .
+
+      - name: Determine result filename
+        id: slug
+        run: |
+          FT=${{ matrix.free-threaded && 'ft' || 'std' }}
+          echo "slug=py${{ matrix.python-version }}-${FT}" >> "$GITHUB_OUTPUT"
+
+      - name: Run benchmark — single-thread
+        run: |
+          mkdir -p bench-results
+          python benchmarks/bench.py \
+            --workers 1 \
+            --size 500 \
+            --runs 7 \
+            --json bench-results/${{ steps.slug.outputs.slug }}-w1.json
+
+      - name: Run benchmark — threaded (workers=4)
+        run: |
+          python benchmarks/bench.py \
+            --workers 4 \
+            --size 500 \
+            --runs 7 \
+            --json bench-results/${{ steps.slug.outputs.slug }}-w4.json
+
+      - name: Upload per-version results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results-${{ steps.slug.outputs.slug }}
+          path: bench-results/
+
+  report:
+    name: Aggregate & publish report
+    needs: bench
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bench-results-*
+          merge-multiple: true
+          path: bench-results/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate Markdown report
+        run: |
+          python benchmarks/report.py bench-results/*.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Print report to log
+        run: python benchmarks/report.py bench-results/*.json
