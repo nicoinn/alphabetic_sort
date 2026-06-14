@@ -149,9 +149,37 @@ from alphabetic_sort import get_supported_languages
 get_supported_languages()  # → sorted list of all 56 locale keys
 ```
 
+## Performance and multithreading
+
+The number-to-word conversion step (`num2words`) dominates runtime for large
+inputs. The library eliminates redundant calls by building a word cache before
+sorting: each unique number (and the absolute value of each negative) is
+converted exactly once.
+
+The `workers` parameter exposes an optional `ThreadPoolExecutor` for that
+conversion step. The default is `workers=1` (single-threaded).
+
+**On standard Python builds (GIL enabled — 3.11, 3.12, 3.13):** threading
+adds overhead rather than removing it. The GIL serializes the num2words calls
+regardless of how many threads you spawn, while thread management still costs
+time. Leave `workers=1` on these builds.
+
+**On free-threaded Python builds (3.13t, 3.14t+):** the GIL is disabled and
+threads genuinely run in parallel. `workers=4` (or higher) gives near-linear
+speedup on large inputs. This is the intended use case for the parameter.
+
+```python
+# Free-threaded Python only — no benefit on standard builds
+alphabetic_sort(large_list, lang="en", workers=4)
+```
+
+The CI benchmark workflow (`benchmark.yml`) measures this automatically across
+Python 3.11–3.15 with and without free-threading, and publishes results to the
+GitHub Actions step summary so the numbers are always up to date.
+
 ## API
 
-### `alphabetic_sort(numbers, lang, *, locale_aware=False, return_words=False)`
+### `alphabetic_sort(numbers, lang, *, locale_aware=False, return_words=False, workers=1)`
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -159,6 +187,7 @@ get_supported_languages()  # → sorted list of all 56 locale keys
 | `lang` | `str` | BCP 47 language tag |
 | `locale_aware` | `bool` | Use NFKD normalization for accented scripts |
 | `return_words` | `bool` | Return `(sorted_numbers, original_words, sorted_words)` |
+| `workers` | `int` | Thread-pool size for number→word conversion. Default `1`. Increase only on free-threaded Python (3.13t+). |
 
 **Raises:** `UnsupportedLanguageError`, `NumberConversionError`, `TypeError`
 

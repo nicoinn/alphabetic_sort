@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from typing import Literal, overload
 
 from num2words import num2words
@@ -27,6 +28,15 @@ def _sort_key(word: str, locale_aware: bool) -> str:
     return word
 
 
+def _build_word_cache(values: set[Number], locale: str, workers: int) -> dict[Number, str]:
+    unique = list(values)
+    if workers > 1 and len(unique) > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            words = list(pool.map(lambda n: number_to_word(n, locale), unique))
+        return dict(zip(unique, words, strict=True))
+    return {n: number_to_word(n, locale) for n in unique}
+
+
 @overload
 def alphabetic_sort(
     numbers: list[Number],
@@ -34,6 +44,7 @@ def alphabetic_sort(
     *,
     locale_aware: bool = ...,
     return_words: Literal[False] = ...,
+    workers: int = ...,
 ) -> list[Number]: ...
 
 
@@ -44,6 +55,7 @@ def alphabetic_sort(
     *,
     locale_aware: bool = ...,
     return_words: Literal[True],
+    workers: int = ...,
 ) -> tuple[list[Number], list[str], list[str]]: ...
 
 
@@ -53,6 +65,7 @@ def alphabetic_sort(
     *,
     locale_aware: bool = False,
     return_words: bool = False,
+    workers: int = 1,
 ) -> list[Number] | tuple[list[Number], list[str], list[str]]:
     """
     Sort numbers by the alphabetical order of their word representations.
@@ -77,6 +90,11 @@ def alphabetic_sort(
         If True, return a 3-tuple: (sorted_numbers, original_words, sorted_words).
         original_words[i] is the word for numbers[i]; sorted_words[i] is the word
         for sorted_numbers[i]. Useful for showing intermediate steps.
+    workers : int
+        Number of threads used for the number-to-word conversion step. Default 1
+        (single-threaded). Increase for large inputs on free-threaded Python
+        (python3.13t / python3.14t), where threading gives near-linear speedup.
+        On standard (GIL-enabled) builds threading adds overhead — leave at 1.
 
     Raises
     ------
@@ -102,16 +120,16 @@ def alphabetic_sort(
     to_convert: set[Number] = set(numbers)
     to_convert.update(abs(n) for n in numbers if n < 0)  # type: ignore[arg-type]
 
-    # One num2words call per unique value — eliminates the 2-3x redundant
-    # conversions of the naive approach (positives went from 2-3 calls to 1).
-    word_cache: dict[Number, str] = {n: number_to_word(n, locale) for n in to_convert}
+    # One num2words call per unique value (optionally parallel).
+    # Eliminates 2-3x redundant conversions vs the naive approach.
+    word_cache = _build_word_cache(to_convert, locale, workers)
 
     original_words = [word_cache[n] for n in numbers]
 
     negatives: list[tuple[Number, str]] = [
-        (n, word_cache[abs(n)])
+        (n, word_cache[abs(n)])  # type: ignore[index]
         for n in numbers
-        if n < 0  # type: ignore[index]
+        if n < 0
     ]
     non_negatives: list[tuple[Number, str]] = [(n, word_cache[n]) for n in numbers if n >= 0]
 
