@@ -2,6 +2,51 @@
 
 > Sort numbers by the alphabetical order of their name in any language.
 
+## What is this?
+
+Numbers, when written out as words, have a perfectly valid alphabetical order.
+*Eight* comes before *five*, which comes before *four*, which comes before *nine*,
+and so on. This order has nothing to do with numerical value — it is purely
+determined by how the words are spelled. Most of the time this is completely
+useless. Occasionally, it is exactly what you need.
+
+This library takes a list of numbers and sorts them the way a dictionary would:
+by converting each number to its written word form in a given language, sorting
+those words alphabetically, and returning the original numbers in that new order.
+
+```python
+from alphabetic_sort import alphabetic_sort
+
+alphabetic_sort([1, 5, 12], lang="en_UK")
+# → [5, 1, 12]
+# because "five" < "one" < "twelve"
+```
+
+The result looks wrong at first glance. That is the point.
+
+## Origin
+
+The idea came from a real-world encounter. A biologist colleague once sent over
+an Excel sheet containing a long list of sample numbers. They had sorted the
+column themselves — and because Excel, left to its own devices, had treated the
+values as text, the numbers ended up in alphabetical order: 1, 10, 100, 11, 12,
+2, 20, 21... The biologist saw nothing wrong with this. The data was sorted, after
+all. Alphabetically sorted numbers are a thing that exists in the wild.
+
+That conversation stuck. This library is the result.
+
+## A note on how this was built
+
+This entire project — library, tests, CI pipeline, web UI, and documentation —
+was written by [Claude](https://claude.ai) on a Sunday, entirely from a cell phone,
+while going about a perfectly ordinary day. No laptop, no desk, no dedicated coding
+session. Just a series of prompts tapped out between whatever else the day had going
+on. The code is real, the tests pass, and the whole thing is published to GitHub.
+
+Make of that what you will.
+
+---
+
 Yes, this is a joke. It works for real.
 
 ```python
