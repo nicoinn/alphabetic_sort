@@ -1,7 +1,7 @@
 import pytest
 
 from alphabetic_sort.exceptions import UnsupportedLanguageError
-from alphabetic_sort.locale_map import resolve_locale, SUPPORTED_LOCALES
+from alphabetic_sort.locale_map import SUPPORTED_LOCALES, resolve_locale
 
 
 def test_exact_match_base_locale():

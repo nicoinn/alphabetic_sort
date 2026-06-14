@@ -1,18 +1,20 @@
+from __future__ import annotations
+
 import unicodedata
-from typing import Union
+from typing import Literal, overload
 
 from num2words import num2words
 
-from alphabetic_sort.exceptions import NumberConversionError, UnsupportedLanguageError
+from alphabetic_sort.exceptions import NumberConversionError
 from alphabetic_sort.locale_map import SUPPORTED_LOCALES, resolve_locale
 
-Number = Union[int, float]
+Number = int | float
 
 
 def number_to_word(number: Number, locale: str) -> str:
     """Convert a single number to its word. Locale must already be resolved."""
     try:
-        return num2words(number, lang=locale)
+        return str(num2words(number, lang=locale))  # type: ignore[no-untyped-call]
     except Exception as exc:
         raise NumberConversionError(
             f"Cannot convert {number!r} with locale {locale!r}: {exc}"
@@ -25,13 +27,33 @@ def _sort_key(word: str, locale_aware: bool) -> str:
     return word
 
 
+@overload
+def alphabetic_sort(
+    numbers: list[Number],
+    lang: str,
+    *,
+    locale_aware: bool = ...,
+    return_words: Literal[False] = ...,
+) -> list[Number]: ...
+
+
+@overload
+def alphabetic_sort(
+    numbers: list[Number],
+    lang: str,
+    *,
+    locale_aware: bool = ...,
+    return_words: Literal[True],
+) -> tuple[list[Number], list[str], list[str]]: ...
+
+
 def alphabetic_sort(
     numbers: list[Number],
     lang: str,
     *,
     locale_aware: bool = False,
     return_words: bool = False,
-) -> "list[Number] | tuple[list[Number], list[str], list[str]]":
+) -> list[Number] | tuple[list[Number], list[str], list[str]]:
     """
     Sort numbers by the alphabetical order of their word representations.
 
@@ -64,9 +86,7 @@ def alphabetic_sort(
         raise TypeError(f"numbers must be a list, got {type(numbers).__name__}")
     for n in numbers:
         if not isinstance(n, (int, float)):
-            raise TypeError(
-                f"All elements must be int or float, got {type(n).__name__}: {n!r}"
-            )
+            raise TypeError(f"All elements must be int or float, got {type(n).__name__}: {n!r}")
 
     if not numbers:
         if return_words:
@@ -88,17 +108,11 @@ def alphabetic_sort(
     ]
 
     # Negatives: reverse alphabetical by absolute value word
-    sorted_neg = sorted(
-        negatives, key=lambda p: _sort_key(p[1], locale_aware), reverse=True
-    )
+    sorted_neg = sorted(negatives, key=lambda p: _sort_key(p[1], locale_aware), reverse=True)
     # Non-negatives: normal alphabetical
-    sorted_pos = sorted(
-        non_negatives, key=lambda p: _sort_key(p[1], locale_aware)
-    )
+    sorted_pos = sorted(non_negatives, key=lambda p: _sort_key(p[1], locale_aware))
 
-    sorted_numbers: list[Number] = (
-        [p[0] for p in sorted_neg] + [p[0] for p in sorted_pos]
-    )
+    sorted_numbers: list[Number] = [p[0] for p in sorted_neg] + [p[0] for p in sorted_pos]
 
     if return_words:
         sorted_words = [number_to_word(n, locale) for n in sorted_numbers]

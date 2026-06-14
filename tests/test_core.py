@@ -1,12 +1,12 @@
 import pytest
 
 from alphabetic_sort import alphabetic_sort, get_supported_languages
-from alphabetic_sort.exceptions import NumberConversionError, UnsupportedLanguageError
-
+from alphabetic_sort.exceptions import UnsupportedLanguageError
 
 # ---------------------------------------------------------------------------
 # Basic alphabetical sort — English
 # ---------------------------------------------------------------------------
+
 
 def test_basic_en():
     # one, five, twelve → five, one, twelve → [5, 1, 12]
@@ -24,6 +24,7 @@ def test_basic_en_bcp47_underscore():
 # ---------------------------------------------------------------------------
 # Regional variant correctness — French
 # ---------------------------------------------------------------------------
+
 
 def test_fr_BE_vs_fr_different_result():
     # 11=onze, 90=quatre-vingt-dix (fr) vs nonante (fr_BE)
@@ -51,6 +52,7 @@ def test_fr_BE_words_differ_from_fr():
 # ---------------------------------------------------------------------------
 # Other languages
 # ---------------------------------------------------------------------------
+
 
 def test_basic_de():
     # acht(8), drei(3), eins(1), elf(11), fünf(5), neun(9), sechs(6),
@@ -100,6 +102,7 @@ def test_basic_pt_br():
 # Float support
 # ---------------------------------------------------------------------------
 
+
 def test_floats_basic():
     # one point five (1.5), zero point five (0.5), two point five (2.5)
     # alpha: one... < two... < zero... → [1.5, 2.5, 0.5]
@@ -128,6 +131,7 @@ def test_float_types_preserved():
 #   - negatives sorted in REVERSE alpha of their absolute value word
 #   - "minus" word is ignored (abs value used as sort key)
 # ---------------------------------------------------------------------------
+
 
 def test_all_negatives_reverse_alpha():
     # abs words: three(-3), one(-1), two(-2)
@@ -167,6 +171,7 @@ def test_negative_floats():
 # Edge cases
 # ---------------------------------------------------------------------------
 
+
 def test_empty_list():
     assert alphabetic_sort([], "en") == []
 
@@ -192,6 +197,7 @@ def test_zero_alone():
 # ---------------------------------------------------------------------------
 # return_words=True
 # ---------------------------------------------------------------------------
+
 
 def test_return_words_structure():
     result = alphabetic_sort([1, 5, 12], "en", return_words=True)
@@ -224,6 +230,7 @@ def test_return_words_empty():
 # Error handling
 # ---------------------------------------------------------------------------
 
+
 def test_unsupported_language_raises():
     with pytest.raises(UnsupportedLanguageError):
         alphabetic_sort([1, 2], "xx")
@@ -247,6 +254,7 @@ def test_non_numeric_element_raises_type_error():
 # ---------------------------------------------------------------------------
 # get_supported_languages
 # ---------------------------------------------------------------------------
+
 
 def test_get_supported_languages_includes_core_locales():
     langs = get_supported_languages()
