@@ -5,7 +5,7 @@ from alphabetic_sort.exceptions import (
     UnsupportedLanguageError,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.0.1"
 __all__ = [
     "alphabetic_sort",
     "get_supported_languages",
