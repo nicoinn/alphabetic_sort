@@ -1,12 +1,18 @@
 name: Release
 
 # Triggered by a version tag: git tag v0.2.0 && git push --tags
+# Or manually via workflow_dispatch (creates the tag automatically).
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+.post[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.0.1) — a v-tag is created on main'
+        required: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -17,10 +23,44 @@ permissions:
 
 jobs:
   # -------------------------------------------------------------------------
+  # Resolve the tag name (works for both push and workflow_dispatch triggers)
+  # For workflow_dispatch: also creates the tag on main.
+  # -------------------------------------------------------------------------
+  prepare:
+    name: Resolve & create tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag name
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push tag (manual dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: v${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+  # -------------------------------------------------------------------------
   # Run the full CI suite first — never publish a broken release
   # -------------------------------------------------------------------------
   ci:
     name: Run CI checks
+    needs: prepare
     uses: ./.github/workflows/ci.yml
 
   # -------------------------------------------------------------------------
@@ -29,10 +69,12 @@ jobs:
   build:
     name: Build distribution
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [prepare, ci]
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
 
       - uses: actions/setup-python@v5
         with:
@@ -110,12 +152,14 @@ jobs:
   github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: publish-pypi
+    needs: [prepare, publish-pypi]
     permissions:
       contents: write  # to create releases and upload assets
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
 
       - uses: actions/download-artifact@v4
         with:
@@ -125,5 +169,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
           files: dist/*
           generate_release_notes: true
