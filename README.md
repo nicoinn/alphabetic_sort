@@ -10,6 +10,11 @@ and so on. This order has nothing to do with numerical value — it is purely
 determined by how the words are spelled. Most of the time this is completely
 useless. Occasionally, it is exactly what you need.
 
+Naturally, this is entirely language-dependent. In English, *eight* sorts first
+among 1–9. In German it is *acht*, which also sorts first (German and English
+agree on this one — enjoy it, it is rare). In French it is *deux*. Same numbers,
+completely different order. The numbers do not care. They never did.
+
 This library takes a list of numbers and sorts them the way a dictionary would:
 by converting each number to its written word form in a given language, sorting
 those words alphabetically, and returning the original numbers in that new order.
