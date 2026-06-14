@@ -95,27 +95,33 @@ def alphabetic_sort(
 
     locale = resolve_locale(lang)
 
-    # Words for each input number in original order (full representation for display)
-    original_words = [number_to_word(n, locale) for n in numbers]
+    # Collect every unique value that needs converting:
+    # - each number (for its display word)
+    # - abs(n) for each negative (sort key ignores "minus"; may coincide with
+    #   an existing positive in the list, in which case it's free)
+    to_convert: set[Number] = set(numbers)
+    to_convert.update(abs(n) for n in numbers if n < 0)  # type: ignore[arg-type]
 
-    # Partition into negatives (< 0) and non-negatives (>= 0)
-    # For negatives, the sort key is the word for the absolute value
+    # One num2words call per unique value — eliminates the 2-3x redundant
+    # conversions of the naive approach (positives went from 2-3 calls to 1).
+    word_cache: dict[Number, str] = {n: number_to_word(n, locale) for n in to_convert}
+
+    original_words = [word_cache[n] for n in numbers]
+
     negatives: list[tuple[Number, str]] = [
-        (n, number_to_word(abs(n), locale)) for n in numbers if n < 0
+        (n, word_cache[abs(n)])
+        for n in numbers
+        if n < 0  # type: ignore[index]
     ]
-    non_negatives: list[tuple[Number, str]] = [
-        (n, number_to_word(n, locale)) for n in numbers if n >= 0
-    ]
+    non_negatives: list[tuple[Number, str]] = [(n, word_cache[n]) for n in numbers if n >= 0]
 
-    # Negatives: reverse alphabetical by absolute value word
     sorted_neg = sorted(negatives, key=lambda p: _sort_key(p[1], locale_aware), reverse=True)
-    # Non-negatives: normal alphabetical
     sorted_pos = sorted(non_negatives, key=lambda p: _sort_key(p[1], locale_aware))
 
     sorted_numbers: list[Number] = [p[0] for p in sorted_neg] + [p[0] for p in sorted_pos]
 
     if return_words:
-        sorted_words = [number_to_word(n, locale) for n in sorted_numbers]
+        sorted_words = [word_cache[n] for n in sorted_numbers]
         return sorted_numbers, original_words, sorted_words
 
     return sorted_numbers
