@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 # ---------------------------------------------------------------------------
 [project]
 name = "alphabetic_sort"
-version = "0.0.1"
+version = "0.0.2"
 description = "Sort numbers by the alphabetical order of their word representations in a given language"
 readme = "README.md"
 requires-python = ">=3.11"
