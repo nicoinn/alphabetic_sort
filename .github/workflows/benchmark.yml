@@ -41,7 +41,7 @@ jobs:
             allow-prereleases: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}${{ matrix.free-threaded && 't' || '' }}
         uses: actions/setup-python@v5
@@ -98,7 +98,7 @@ jobs:
     if: always()
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download all benchmark artifacts
         uses: actions/download-artifact@v8
