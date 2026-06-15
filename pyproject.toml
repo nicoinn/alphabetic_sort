@@ -1,7 +1,7 @@
 [build-system]
 # Pin setuptools < 69.3 to avoid automatic License-File metadata (Metadata-Version 2.4)
 # which twine's packaging 24.0 does not yet recognize as valid.
-requires = ["setuptools>=68,<69.3", "wheel"]
+requires = ["setuptools>=68,<82.1", "wheel"]
 build-backend = "setuptools.build_meta"
 
 # ---------------------------------------------------------------------------
